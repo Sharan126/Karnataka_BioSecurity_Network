@@ -27,9 +27,8 @@ class IncidentService:
         if rag_output:
             incident.set_rag_data(rag_output)
             farmer_rec = "\n".join([f"• {r}" for r in rag_output.get("farmer_response", {}).get("recommended", [])])
-            meds_rec = "\n".join([f"• {m}" for m in rag_output.get("vet_summary", {}).get("recommended_medicines", [])])
             vet_adv = rag_output.get("vet_summary", {}).get("vet_advisory", "Clinical examination advised.")
-            incident.ai_solution = f"FARMER ADVISORY:\n{farmer_rec}\n\nRECOMMENDED MEDICINES & THERAPY:\n{meds_rec}\n\nVETERINARY SUMMARY:\n{vet_adv}"
+            incident.ai_solution = f"FARMER ADVISORY:\n{farmer_rec}\n\nVETERINARY SUMMARY:\n{vet_adv}"
 
         db.session.add(incident)
         db.session.commit()
@@ -143,37 +142,18 @@ class IncidentService:
                     content=f"Dr. {vet_username} verified a High Severity {incident.animal_type.title()} incident (#{incident.id}: {incident.title}) in {incident.village}, {incident.taluka}. Immediate biosecurity containment and 3 km surveillance zone recommended.",
                     message_type='emergency'
                 )
-                db.session.add(alert_msg)
-
-        # 2. Notify Farmer Post-Verification
-        farmer_profile = FarmerProfile.query.get(incident.farmer_id)
-        if farmer_profile and farmer_profile.user:
-            diag = edited_fields.get("diagnosis") or "Clinical Veterinary Inspection Completed"
-            rec_act = edited_fields.get("recommended_action") or "Follow standard farm isolation & hydration guidelines."
-            
-            visit_needed = "IMMEDIATE VISIT REQUIRED" if sev in ['high', 'critical'] else ("Review recommended within 24h" if sev == 'medium' else "Visit not immediately required")
-            
-            farmer_msg = Message(
-                sender_id=vet_user.id if vet_user else 1,
-                recipient_id=farmer_profile.user.id,
-                title=f"Incident #{incident.id} Review Update - {'Verified ✓' if is_verified else 'Rejected ✗'}",
-                content=f"""VERIFICATION STATUS: {'Verified by Veterinarian' if is_verified else 'Rejected by Veterinarian'}
-REVIEWING VETERINARIAN: Dr. {vet_username}
-DIAGNOSIS / FINDING: {diag}
-
-VETERINARY VISIT NECESSITY:
-{visit_needed}
-
-SAFETY & ISOLATION MEASURES:
-• Isolate affected {incident.animal_type} at least 100 meters away from healthy livestock.
-• Disinfect shed entryways and restrict handler movement.
-• {rec_act}
-
-VET NOTES:
-{vet_notes or 'No additional notes provided.'}""",
-                message_type='alert' if is_verified else 'general'
+        # 2. Notify Farmer, District Head, and State Head via NotificationService (Real-Time + DB)
+        try:
+            from backend.services.notification_service import NotificationService
+            NotificationService.notify_vet_verification_completed(
+                incident=incident,
+                is_verified=is_verified,
+                vet_user=vet_user,
+                severity=sev,
+                edited_fields=edited_fields
             )
-            db.session.add(farmer_msg)
+        except Exception as n_ex:
+            print(f"Error in NotificationService post-verification: {n_ex}")
 
         db.session.commit()
         return incident, None

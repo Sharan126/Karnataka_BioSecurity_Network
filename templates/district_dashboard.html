@@ -174,7 +174,7 @@
                                 <span class="fw-bold text-{{ 'success' if district.vaccination_coverage >= 80 else 'warning' if district.vaccination_coverage >= 60 else 'danger' }}">{{ district.vaccination_coverage }}%</span>
                             </div>
                             <div class="progress mt-2">
-                                <div class="progress-bar bg-{{ 'success' if district.vaccination_coverage >= 80 else 'warning' if district.vaccination_coverage >= 60 else 'danger' }}" style="width: {{ district.vaccination_coverage }}%"></div>
+                                <div class="progress-bar bg-{{ 'success' if district.vaccination_coverage >= 80 else 'warning' if district.vaccination_coverage >= 60 else 'danger' }}" style="width: {{ district.vaccination_coverage | default(0) }}%;"></div>
                             </div>
                         </div>
                     </div>
@@ -245,12 +245,15 @@
 <script>
 // Vaccination Pie Chart
 const vaxCtx = document.getElementById('vaxPieChart').getContext('2d');
+const vaxLabels = {{ (vax_data | map(attribute=0) | list) | tojson if vax_data else [] }};
+const vaxCounts = {{ (vax_data | map(attribute=1) | list) | tojson if vax_data else [] }};
+
 new Chart(vaxCtx, {
     type: 'doughnut',
     data: {
-        labels: [{% for v in vax_data %}'{{ v[0].title() }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        labels: vaxLabels,
         datasets: [{
-            data: [{% for v in vax_data %}{{ v[1] }}{% if not loop.last %},{% endif %}{% endfor %}],
+            data: vaxCounts,
             backgroundColor: ['#2e7d32', '#1565c0', '#f9a825', '#c62828', '#6a1b9a']
         }]
     },
