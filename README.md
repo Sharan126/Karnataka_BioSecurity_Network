@@ -1,120 +1,79 @@
-# Karnataka Biosecurity Network
+# 🐄 Karnataka Biosecurity Network
 
-A complete community-driven biosecurity management system for Karnataka, India connecting farmers, veterinarians, district heads, and state heads for rapid disease response.
+### Protecting Livestock. Empowering Farmers. Securing Karnataka's Food Future.
 
-## Features
+## 🚨 The Problem
 
-### Farmer Dashboard
-- Simple, multilingual dashboard (English + Kannada)
-- Biosecurity awareness tips
-- Emergency reporting with image upload
-- AI-generated temporary solutions (Gemini API integration)
-- Vaccination record tracking
-- Message/alerts inbox
+Every year, livestock diseases like **FMD, PPR, HS, Avian Influenza, and ASF** rip through rural Karnataka, wiping out farmer incomes and threatening food security — often because early warning signs go unreported until it's too late. Farmers lack a fast way to flag outbreaks, veterinarians struggle to prioritize cases across sprawling districts, and state officials are left reacting to crises instead of preventing them. Disconnected, paper-based reporting means disease spreads faster than the response.
 
-### Veterinarian Dashboard
-- View and accept pending cases in district
-- Schedule farm visits
-- Mark cases as resolved with notes
-- Direct messaging to farmers
-- Case management
+**Karnataka Biosecurity Network** closes that gap — a real-time, role-based platform that connects **farmers, veterinarians, district heads, and state heads** into a single command chain for disease detection and response.
 
-### District Head Dashboard
-- Key metrics summary (farms, cases, vets)
-- Active disease cases tracking
-- Incidents menu with status monitoring
-- Vaccination coverage pie charts
-- Send alerts to farmers and vets
+## ✨ What Makes This Different
 
-### State Head Dashboard
-- State-wide summary with charts
-- District performance comparison
-- Risk zone map (Red/Yellow/Green)
-- AI-powered insights
-- State-wide alert broadcasting
-- Biosecurity status tracking
+- 🌾 **Farmer-First Design** — A bilingual (English + Kannada) dashboard so language is never a barrier to reporting an emergency.
+- 🤖 **AI-Powered Triage** — Gemini API integration delivers instant, AI-generated interim guidance the moment a farmer reports a case, with a smart rule-based fallback when offline from AI.
+- 🩺 **Streamlined Vet Workflows** — Vets see live, district-filtered case queues, schedule visits, and resolve cases without ever touching a phone tree.
+- 🗺️ **Risk Zone Intelligence** — District and state heads get color-coded Red/Yellow/Green outbreak maps (Leaflet) and vaccination coverage visualizations (Chart.js) for data-driven decisions.
+- 📊 **State-Wide Command View** — Cross-district performance comparisons and AI-generated insights turn scattered reports into a coherent state biosecurity strategy.
+- 🇮🇳 **Built on Real Karnataka Data** — Seeded with authentic data from all 15 districts, real talukas and villages, and actual vaccination/outbreak statistics — not dummy placeholders.
 
-## Real Karnataka Data
-The system is seeded with authentic data:
-- 15 districts with real livestock census data
-- Actual villages and talukas
-- Priority diseases: FMD, PPR, HS, Avian Influenza, ASF
-- Vaccination coverage statistics
-- Risk zones based on outbreak patterns
+## 💥 Impact
 
-## Tech Stack
-- **Frontend:** HTML, CSS, JavaScript, Bootstrap 5, Chart.js, Leaflet Maps
-- **Backend:** Flask, SQLAlchemy, Flask-Login
-- **AI:** Google Gemini API (optional - falls back to rule-based system)
-- **Database:** SQLite (can be upgraded to PostgreSQL)
+By compressing the time between "a cow gets sick" and "a vet is on the way," this platform can help contain outbreaks before they become epidemics — protecting rural livelihoods, animal welfare, and Karnataka's agricultural economy at scale.
 
-## Setup Instructions
+## 🛠️ Tech Stack
 
-### 1. Install Dependencies
+`Flask` · `SQLAlchemy` · `Flask-Login` · `Bootstrap 5` · `Chart.js` · `Leaflet Maps` · `Google Gemini API` · `SQLite`
+
+## 🚀 Installation
+
 ```bash
+# 1. Clone and enter the project
 cd biosecurity_karnataka
+
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Set Environment Variables (Optional - for AI)
-```bash
-export GEMINI_API_KEY="your_gemini_api_key_here"
-```
-Without API key, the system uses intelligent rule-based fallback suggestions.
+# 3. (Optional) Enable AI-powered suggestions
+export GEMMA_API_KEY="your_gemma_api_key_here"
 
-### 3. Initialize Database
-```bash
+# 4. Launch — database auto-creates and seeds with Karnataka data
 python app.py
 ```
-The database will be automatically created and seeded with Karnataka data on first run.
 
-### 4. Access the Application
-Open browser: `http://localhost:5000`
+Then visit **`http://localhost:5000`** 🎉
 
-## Demo Accounts
+## 🔑 Try It Now — Demo Accounts
 
 | Role | Username | Password |
 |------|----------|----------|
-| Farmer | farmer_bengaluru_urban_1 | farmer123 |
-| Vet | vet_bengaluru_urban_1 | vet123 |
-| District Head | district_bengaluru_urban | district123 |
-| State Head | karnataka_state | state123 |
+| Farmer | `farmer_bengaluru_urban_1` | `farmer123` |
+| Vet | `vet_bengaluru_urban_1` | `vet123` |
+| District Head | `district_bengaluru_urban` | `district123` |
+| State Head | `karnataka_state` | `state123` |
 
-## Project Structure
-```
-biosecurity_karnataka/
-├── app.py                 # Main Flask application
-├── models.py              # Database models
-├── data.py                # Karnataka seed data
-├── requirements.txt       # Python dependencies
-├── static/
-│   ├── css/              # Stylesheets
-│   ├── js/               # JavaScript files
-│   ├── uploads/          # Uploaded incident images
-│   └── images/           # Static images
-└── templates/
-    ├── base.html         # Base template
-    ├── index.html        # Landing page
-    ├── about.html        # About page
-    ├── login.html        # Login page
-    ├── signup.html       # Registration page
-    ├── farmer_dashboard.html
-    ├── vet_dashboard.html
-    ├── district_dashboard.html
-    ├── state_dashboard.html
-    ├── report_emergency.html
-    └── view_incident.html
-```
+## 📖 Usage
 
-## Key Features to Add in Production
-1. **SMS Integration:** Twilio/Exotel for SMS alerts to farmers
-2. **Push Notifications:** Firebase Cloud Messaging
-3. **Mobile App:** React Native/Flutter companion app
-4. **Blockchain:** Immutable vaccination records
-5. **IoT Sensors:** Real-time temperature/humidity monitoring
-6. **Multilingual:** Expand beyond Kannada to Telugu, Tamil, Marathi
-7. **Offline Mode:** PWA for areas with poor connectivity
-8. **Analytics:** Power BI/Tableau integration for advanced reporting
+1. **Farmers** log in, report emergencies with photo evidence, and instantly receive AI-generated interim guidance while help is on the way.
+2. **Vets** review incoming cases by district, accept and schedule visits, then close the loop with resolution notes.
+3. **District Heads** monitor active cases, vaccination coverage, and broadcast alerts to their network.
+4. **State Heads** track cross-district risk zones and issue state-wide advisories backed by AI insights.
 
-## License
-This project is developed for the Animal Husbandry & Veterinary Services Department, Karnataka.
+## 🤝 Contributing
+
+We'd love your help extending the network's reach:
+
+1. Fork the repo and create a feature branch
+2. Follow existing code structure (`models.py`, `data.py`, `templates/`)
+3. Test against the seeded demo accounts before submitting
+4. Open a PR describing your change and its real-world impact
+
+Ideas welcome: SMS alerts (Twilio/Exotel), Firebase push notifications, a Flutter companion app, PWA offline mode, and expanded multilingual support (Telugu, Tamil, Marathi).
+
+## 📜 License
+
+Developed for the **Animal Husbandry & Veterinary Services Department, Karnataka**.
+
+---
+
+*Built to give every farmer a voice — and every outbreak a faster response.*
