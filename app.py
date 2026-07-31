@@ -463,6 +463,42 @@ def report_emergency():
             print(f"Error running Agentic RAG pipeline in report_emergency: {ex}")
             incident.ai_solution = generate_ai_solution(description, symptoms, animal_type, images)
 
+        # Notify Veterinary Doctor(s) of the newly submitted emergency report
+        if profile and profile.district_id:
+            vets = VetProfile.query.filter_by(district_id=profile.district_id).all()
+            for vet in vets:
+                if vet.user:
+                    vet_msg = Message(
+                        sender_id=current_user.id,
+                        recipient_id=vet.user.id,
+                        recipient_role='vet',
+                        district_id=profile.district_id,
+                        title=f"🚨 EMERGENCY REPORT: {animal_type.title()} in {profile.village or 'District'} (Case #{incident.id})",
+                        content=f"Farmer {current_user.username} reported an emergency livestock case (#{incident.id}).\n\n"
+                                f"• Location: {profile.village or 'N/A'}, {profile.taluka or 'N/A'}\n"
+                                f"• Animal Type: {animal_type.title()}\n"
+                                f"• Symptoms: {symptoms}\n"
+                                f"• Severity: {severity.upper()}\n"
+                                f"• Affected Count: {affected_count}\n\n"
+                                f"Please review, examine, and verify this report.",
+                        message_type='emergency' if severity in ['high', 'critical'] else 'alert'
+                    )
+                    db.session.add(vet_msg)
+        if not (profile and profile.district_id) or not vets:
+            vet_msg = Message(
+                sender_id=current_user.id,
+                recipient_role='vet',
+                district_id=profile.district_id if profile else None,
+                title=f"🚨 EMERGENCY REPORT: {animal_type.title()} (Case #{incident.id})",
+                content=f"Farmer {current_user.username} reported an emergency livestock case (#{incident.id}).\n\n"
+                        f"• Animal Type: {animal_type.title()}\n"
+                        f"• Symptoms: {symptoms}\n"
+                        f"• Severity: {severity.upper()}\n\n"
+                        f"Please review and verify this report.",
+                message_type='emergency' if severity in ['high', 'critical'] else 'alert'
+            )
+            db.session.add(vet_msg)
+
         db.session.commit()
 
         flash('Emergency reported successfully! Agentic RAG Analysis complete.', 'success')
@@ -536,12 +572,18 @@ def vet_dashboard():
     # Get farmers in same district for messaging
     farmers = FarmerProfile.query.filter_by(district_id=profile.district_id).all()
 
+    # Get notifications and emergency messages for vet
+    messages = Message.query.filter(
+        (Message.recipient_role == 'vet') | (Message.recipient_id == current_user.id)
+    ).order_by(Message.created_at.desc()).limit(10).all()
+
     return render_template('vet_dashboard.html',
                          profile=profile,
                          pending_incidents=pending_incidents,
                          assigned_incidents=assigned_incidents,
                          schedules=schedules,
-                         farmers=farmers)
+                         farmers=farmers,
+                         messages=messages)
 
 @app.route('/vet/assign/<int:incident_id>', methods=['POST'])
 @login_required
@@ -593,10 +635,29 @@ def resolve_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     incident.status = 'resolved'
     incident.resolved_at = get_ist()
+    incident.vet_verified = True
     incident.vet_notes = request.form.get('vet_notes')
+
+    # Notify Farmer of Verification / Resolution
+    farmer_profile = FarmerProfile.query.get(incident.farmer_id)
+    if farmer_profile and farmer_profile.user:
+        vet_username = current_user.username
+        farmer_msg = Message(
+            sender_id=current_user.id,
+            recipient_id=farmer_profile.user.id,
+            title=f"Incident #{incident.id} Verified & Resolved ✓",
+            content=f"VERIFICATION STATUS: Verified & Resolved by Veterinarian\n"
+                    f"REVIEWING VETERINARIAN: Dr. {vet_username}\n\n"
+                    f"VET NOTES & ADVISORY:\n"
+                    f"{incident.vet_notes or 'Case verified and marked resolved.'}\n\n"
+                    f"Follow recommended biosecurity isolation protocols.",
+            message_type='alert'
+        )
+        db.session.add(farmer_msg)
+
     db.session.commit()
 
-    flash('Case marked as resolved', 'success')
+    flash('Case marked as resolved and farmer notified', 'success')
     return redirect(url_for('vet_dashboard'))
 
 @app.route('/vet/send-message', methods=['POST'])

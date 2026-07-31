@@ -43,6 +43,41 @@ class IncidentService:
                     district.risk_level = 'yellow'
                 db.session.commit()
 
+        # Notify Veterinary Doctors of new Emergency Incident
+        vets = VetProfile.query.filter_by(district_id=district_id).all() if district_id else []
+        for vet in vets:
+            if vet.user:
+                vet_msg = Message(
+                    sender_id=farmer_id,
+                    recipient_id=vet.user.id,
+                    recipient_role='vet',
+                    district_id=district_id,
+                    title=f"🚨 EMERGENCY REPORT: {animal_type.title()} Incident #{incident.id}",
+                    content=f"Emergency report created by Farmer.\n"
+                            f"• Animal Type: {animal_type.title()}\n"
+                            f"• Symptoms: {symptoms}\n"
+                            f"• Severity: {severity.upper()}\n"
+                            f"• Location: {village or 'District'}, {taluka or ''}\n\n"
+                            f"Please review and verify this incident report.",
+                    message_type='emergency' if severity in ['high', 'critical'] else 'alert'
+                )
+                db.session.add(vet_msg)
+        if not vets:
+            vet_msg = Message(
+                sender_id=farmer_id,
+                recipient_role='vet',
+                district_id=district_id,
+                title=f"🚨 EMERGENCY REPORT: {animal_type.title()} Incident #{incident.id}",
+                content=f"Emergency report created by Farmer.\n"
+                        f"• Animal Type: {animal_type.title()}\n"
+                        f"• Symptoms: {symptoms}\n"
+                        f"• Severity: {severity.upper()}\n\n"
+                        f"Please review and verify this incident report.",
+                message_type='emergency' if severity in ['high', 'critical'] else 'alert'
+            )
+            db.session.add(vet_msg)
+
+        db.session.commit()
         return incident
 
     @staticmethod
