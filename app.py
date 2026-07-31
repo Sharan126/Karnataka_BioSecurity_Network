@@ -67,16 +67,6 @@ def root_vet_verify():
 def root_vet_incidents():
     return vet_incidents_endpoint()
 
-@app.route('/district/dashboard', methods=['GET'])
-@login_required
-def root_district_dashboard():
-    return district_dashboard_endpoint()
-
-@app.route('/state/dashboard', methods=['GET'])
-@login_required
-def root_state_dashboard():
-    return state_dashboard_endpoint()
-
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
