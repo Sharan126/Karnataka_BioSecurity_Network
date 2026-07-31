@@ -41,6 +41,7 @@ Please provide structured output with the following sections clearly marked:
 POSSIBLE CONCERN: <describe likely concern grounded in retrieved text or 'Insufficient evidence.'>
 IMMEDIATE PRECAUTIONS: <bullet list of 3-4 precautions directly supported by retrieved text>
 ISOLATION RECOMMENDATION: <specific quarantine radius/isolation steps from text>
+RECOMMENDED MEDICINES & THERAPEUTICS: <bullet list of specific medicines, mouth/foot washes, antiseptics, NSAIDs, antibiotics for secondary infection, or supportive treatments directly mentioned in retrieved context, or 'Insufficient evidence.' if none specified>
 FARMER ADVISORY: <3 simplified clear action points for the farmer>
 VETERINARY ADVISORY: <technical recommendations for the visiting veterinarian>
 GOVERNMENT REPORTING RECOMMENDATION: <reporting timeline/SOP requirements from context>"""
@@ -79,6 +80,10 @@ IMMEDIATE PRECAUTIONS:
 - Provide clean drinking water and soft feed.
 - Limit handler movement between sheds.
 ISOLATION RECOMMENDATION: Insufficient evidence. Immediate isolation recommended pending vet review.
+RECOMMENDED MEDICINES & THERAPEUTICS:
+- Flush mouth/wounds with 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution.
+- Administer supportive antipyretic/NSAID (Meloxicam) as prescribed by licensed veterinarian.
+- Provide Oral Rehydration Salts (ORS) and soft gruel.
 FARMER ADVISORY:
 1. Separate the sick animal from the herd.
 2. Avoid direct contact with other farm livestock.
@@ -93,11 +98,17 @@ IMMEDIATE PRECAUTIONS:
 - Disinfect premises with recommended disinfectant as per {top_c['title']}.
 - Restrict farm visitors and vehicle entry.
 ISOLATION RECOMMENDATION: Isolate animal at least 100 meters away from healthy livestock.
+RECOMMENDED MEDICINES & THERAPEUTICS:
+- Oral Wash: Flush mouth lesions twice daily with 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution. Apply Boro-glycerine paste.
+- Foot & Wound Care: Wash interdigital lesions with KMnO4 solution and apply antiseptic fly-repellent ointment (Loraxene / copper sulphate).
+- Fever & Pain Control: NSAIDs (Meloxicam @ 0.5 mg/kg IV/IM) under veterinary supervision.
+- Secondary Infection Prevention: Broad-spectrum antibiotic umbrella (e.g. Oxytetracycline @ 20 mg/kg IM) if prescribed by VAS.
+- Hydration & Nutrition: Administer Oral Rehydration Salts (ORS), dextrose, and soft green fodder/gruel.
 FARMER ADVISORY:
 1. Separate the animal from the herd immediately.
 2. Avoid herd contact and restrict footwear movement.
-3. Contact nearby veterinarian for official inspection.
-VETERINARY ADVISORY: Perform clinical examination and initiate supportive care based on {top_c['title']}.
+3. Contact nearby veterinarian for official inspection and prescription.
+VETERINARY ADVISORY: Perform clinical examination and initiate supportive antimicrobial & anti-inflammatory therapy based on {top_c['title']}.
 GOVERNMENT REPORTING RECOMMENDATION: Report to District Deputy Director within 6 hours if mortality exceeds threshold."""
 
         return reasoning_text

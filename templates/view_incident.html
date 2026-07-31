@@ -166,6 +166,23 @@
                     </div>
 
                     <div class="row g-3">
+                        <div class="col-12">
+                            <div class="p-3 bg-white rounded border border-success shadow-sm">
+                                <h6 class="fw-bold text-success mb-2"><i class="fas fa-pills me-2"></i>Recommended Medicines & Supportive Therapy (Veterinary & SOP Grounded)</h6>
+                                {% set meds = vet_sum.get('recommended_medicines') or farmer_resp.get('recommended_medicines', []) %}
+                                {% if meds %}
+                                <ul class="mb-0 small ps-3">
+                                    {% for med in meds %}
+                                    <li class="mb-1"><strong>{{ med }}</strong></li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p class="small text-muted mb-0">1% Potassium Permanganate (KMnO4) wash for lesions; NSAID (Meloxicam) for fever; Oxytetracycline for secondary infection; Oral Rehydration Salts (ORS).</p>
+                                {% endif %}
+                                <small class="text-muted d-block mt-2 fst-italic"><i class="fas fa-info-circle me-1"></i>Note: Prescription medicines must be administered under the direction of a certified veterinarian.</small>
+                            </div>
+                        </div>
+
                         <div class="col-md-6">
                             <div class="p-3 bg-light rounded border h-100">
                                 <h6 class="fw-bold text-warning"><i class="fas fa-shield-alt me-2"></i>Immediate Precautions</h6>

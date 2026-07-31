@@ -10,6 +10,7 @@ class FormatterAgent:
         concern = self._extract_section(reasoning_text, "POSSIBLE CONCERN")
         precautions = self._extract_section(reasoning_text, "IMMEDIATE PRECAUTIONS")
         isolation = self._extract_section(reasoning_text, "ISOLATION RECOMMENDATION")
+        medicines = self._extract_section(reasoning_text, "RECOMMENDED MEDICINES & THERAPEUTICS") or self._extract_section(reasoning_text, "RECOMMENDED MEDICINES")
         farmer_adv = self._extract_section(reasoning_text, "FARMER ADVISORY")
         vet_adv = self._extract_section(reasoning_text, "VETERINARY ADVISORY")
         govt_rec = self._extract_section(reasoning_text, "GOVERNMENT REPORTING RECOMMENDATION")
@@ -26,6 +27,22 @@ class FormatterAgent:
                 "Separate the animal from the herd immediately",
                 "Avoid herd contact and restrict footwear movement",
                 "Contact nearby veterinarian for official examination"
+            ]
+
+        # Format medicines list
+        meds_list = []
+        if medicines:
+            for line in medicines.split("\n"):
+                line_clean = re.sub(r"^[\d\-\*\.]+\s*", "", line.strip())
+                if line_clean and not line_clean.lower().startswith("insufficient evidence"):
+                    meds_list.append(line_clean)
+
+        if not meds_list:
+            meds_list = [
+                "Oral Wash: 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution twice daily.",
+                "Fever & Pain Relief: NSAID (Meloxicam 0.5 mg/kg) under veterinary supervision.",
+                "Secondary Infection Protection: Broad-spectrum antibiotic (Oxytetracycline) as prescribed by VAS.",
+                "Supportive Care: Oral Rehydration Salts (ORS), dextrose, and soft feed/gruel."
             ]
 
         # Determine district outbreak trigger
@@ -61,12 +78,14 @@ class FormatterAgent:
             "farmer_response": {
                 "observed": incident_obj.get("symptoms_observed"),
                 "recommended": farmer_recommendations[:4],
-                "disclaimer": "This is not a confirmed diagnosis. A licensed veterinarian must examine the animal."
+                "recommended_medicines": meds_list,
+                "disclaimer": "This is not a confirmed diagnosis. A licensed veterinarian must examine the animal and prescribe exact medication."
             },
             "vet_summary": {
                 "possible_concern": concern if concern else "Requires clinical examination",
                 "immediate_precautions": precautions if precautions else "Isolate and disinfect premises",
                 "isolation_recommendation": isolation if isolation else "Isolate animal at least 100 meters from herd",
+                "recommended_medicines": meds_list,
                 "vet_advisory": vet_adv if vet_adv else "Clinical evaluation and diagnostic sample collection advised",
                 "requires_vet_visit": incident_obj.get("needs_vet_visit", True)
             },

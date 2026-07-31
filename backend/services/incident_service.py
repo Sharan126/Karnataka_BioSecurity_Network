@@ -27,8 +27,9 @@ class IncidentService:
         if rag_output:
             incident.set_rag_data(rag_output)
             farmer_rec = "\n".join([f"• {r}" for r in rag_output.get("farmer_response", {}).get("recommended", [])])
+            meds_rec = "\n".join([f"• {m}" for m in rag_output.get("vet_summary", {}).get("recommended_medicines", [])])
             vet_adv = rag_output.get("vet_summary", {}).get("vet_advisory", "Clinical examination advised.")
-            incident.ai_solution = f"FARMER ADVISORY:\n{farmer_rec}\n\nVETERINARY SUMMARY:\n{vet_adv}"
+            incident.ai_solution = f"FARMER ADVISORY:\n{farmer_rec}\n\nRECOMMENDED MEDICINES & THERAPY:\n{meds_rec}\n\nVETERINARY SUMMARY:\n{vet_adv}"
 
         db.session.add(incident)
         db.session.commit()
