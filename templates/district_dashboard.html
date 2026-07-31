@@ -100,7 +100,7 @@
                             <tbody>
                                 {% for vet in unverified_vets %}
                                 <tr>
-                                    <td>Dr. {{ vet.user.username }}</td>
+                                    <td>Dr. {{ vet.user.username if vet.user else ('Vet #' ~ vet.id) }}</td>
                                     <td>{{ vet.registration_number }}</td>
                                     <td>{{ vet.specialization }}</td>
                                     <td>{{ vet.taluka }}</td>
@@ -144,13 +144,13 @@
                                         {% for inc in incidents %}
                                         <tr>
                                             <td><a href="{{ url_for('view_incident', incident_id=inc.id) }}">#{{ inc.id }}</a></td>
-                                            <td>{{ inc.title[:25] }}...</td>
-                                            <td>{{ inc.farmer.user.username }}</td>
-                                            <td>{{ inc.village }}</td>
-                                            <td>{{ inc.animal_type.title() }}</td>
-                                            <td><span class="badge bg-{{ 'success' if inc.severity == 'low' else 'warning' if inc.severity == 'medium' else 'danger' }}">{{ inc.severity.upper() }}</span></td>
-                                            <td><span class="badge bg-{{ 'warning' if inc.status == 'pending' else 'info' if inc.status == 'assigned' else 'primary' if inc.status == 'in_progress' else 'success' }}">{{ inc.status.replace('_', ' ').title() }}</span></td>
-                                            <td>{{ inc.created_at.strftime('%d %b') }}</td>
+                                            <td>{{ inc.title[:25] if inc.title else 'Incident' }}...</td>
+                                            <td>{{ inc.farmer.user.username if inc.farmer and inc.farmer.user else ('Farmer #' ~ inc.farmer_id) }}</td>
+                                            <td>{{ inc.village or 'N/A' }}</td>
+                                            <td>{{ inc.animal_type.title() if inc.animal_type else 'Livestock' }}</td>
+                                            <td><span class="badge bg-{{ 'success' if inc.severity == 'low' else 'warning' if inc.severity == 'medium' else 'danger' }}">{{ (inc.severity or 'medium')|upper }}</span></td>
+                                            <td><span class="badge bg-{{ 'warning' if inc.status == 'pending' else 'info' if inc.status == 'assigned' else 'primary' if inc.status == 'in_progress' else 'success' }}">{{ (inc.status or 'pending').replace('_', ' ').title() }}</span></td>
+                                            <td>{{ inc.created_at.strftime('%d %b') if inc.created_at else '' }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>

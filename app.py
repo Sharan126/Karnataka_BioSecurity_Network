@@ -710,8 +710,13 @@ def district_dashboard():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
 
-    profile = current_user.district_profile
-    district = District.query.get(profile.district_id)
+    profile = getattr(current_user, 'district_profile', None)
+    district_id = profile.district_id if profile else 1
+    district = District.query.get(district_id) or District.query.first()
+
+    if not district:
+        flash('No district found in database. Please initialize data.', 'warning')
+        return redirect(url_for('index'))
 
     # Key metrics
     total_farms = FarmerProfile.query.filter_by(district_id=district.id).count()
