@@ -40,7 +40,7 @@ Return ONLY valid JSON in this format:
 
         # Try Gemma / Google API models
         if self.gemma_key and not self.gemma_key.startswith('nvapi-'):
-            for model_name in ['gemma-4-31b-it', 'gemma-4-26b-a4b-it']:
+            for model_name in ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemma-2-27b-it', 'gemini-1.5-pro']:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemma_key}"
                     payload = {
@@ -166,7 +166,7 @@ Return ONLY valid JSON in this format:
         import re
         if re.search(r'[a-zA-Z]{2,}', text_str) and self.gemma_key and not self.gemma_key.startswith('nvapi-'):
             prompt = f"Translate this full text into 100% fluent Kannada script. Return ONLY the translated Kannada text without English words or quotes:\n\n{text_str}"
-            for model_name in ['gemma-4-31b-it', 'gemma-4-26b-a4b-it']:
+            for model_name in ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemma-2-27b-it', 'gemini-1.5-pro']:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemma_key}"
                     payload = {

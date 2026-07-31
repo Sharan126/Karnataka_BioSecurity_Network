@@ -38,12 +38,27 @@ class FormatterAgent:
                     meds_list.append(line_clean)
 
         if not meds_list:
-            meds_list = [
-                "Oral Wash: 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution twice daily.",
-                "Fever & Pain Relief: NSAID (Meloxicam 0.5 mg/kg) under veterinary supervision.",
-                "Secondary Infection Protection: Broad-spectrum antibiotic (Oxytetracycline) as prescribed by VAS.",
-                "Supportive Care: Oral Rehydration Salts (ORS), dextrose, and soft feed/gruel."
-            ]
+            symptoms_str = str(incident_obj.get("symptoms_observed") or incident_obj.get("symptoms") or "").lower()
+            anim = incident_obj.get("animal_type", "cattle").title()
+            if any(k in symptoms_str for k in ['hair loss', 'skin', 'crust', 'lesion', 'red', 'scab', 'itch', 'alopecia']):
+                meds_list = [
+                    f"Antiparasitic / Acaricide: Subcutaneous Ivermectin @ 0.2 mg/kg or topical Permethrin spray for {anim}.",
+                    "Topical Antiseptic Wash: Clean skin lesions twice daily with 1% Chlorhexidine or Povidone-Iodine solution.",
+                    "Anti-inflammatory / Pain Control: NSAID (Meloxicam 0.5 mg/kg) under veterinary supervision.",
+                    "Supportive Skin Therapy: Vitamin A, D3, E and Zinc oral supplement to promote skin recovery."
+                ]
+            elif any(k in symptoms_str for k in ['cough', 'nasal', 'breath', 'pneumonia', 'fever', 'respiratory']):
+                meds_list = [
+                    "Broad-Spectrum Antibiotic: Enrofloxacin @ 5 mg/kg or Oxytetracycline @ 20 mg/kg IM for secondary pneumonia.",
+                    "Antipyretic / NSAID: Meloxicam or Flunixin Meglumine for fever and pulmonary inflammation.",
+                    "Supportive Hydration: Oral Rehydration Salts (ORS), dextrose, and warm clean water."
+                ]
+            else:
+                meds_list = [
+                    f"Parenteral Antimicrobial: Broad-spectrum antibiotic coverage as prescribed by licensed veterinarian for {anim}.",
+                    "Antipyretic / Analgesic: NSAID (Meloxicam 0.5 mg/kg) for temperature regulation and pain relief.",
+                    "Supportive Therapy: Oral Rehydration Salts (ORS) and high-energy nutritional supplement."
+                ]
 
         # Determine district outbreak trigger
         severity = incident_obj.get("severity", "medium").lower()

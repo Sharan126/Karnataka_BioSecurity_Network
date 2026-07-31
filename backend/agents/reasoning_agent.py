@@ -4,55 +4,74 @@ import requests
 class ReasoningAgent:
     """
     Agent 3: Reasoning Agent
-    Synthesizes Gemma output and retrieved knowledge context.
-    Enforces strict non-hallucination rules: uses ONLY retrieved context;
-    if evidence is missing, explicitly states 'Insufficient evidence.'
+    Synthesizes Gemma/Gemini LLM reasoning, local SOP context, and global veterinary medical knowledge.
+    Dynamically generates best global medicines, therapeutics, APIs, dosages, and administration routes
+    specifically tailored to the reported animal species and observed symptoms.
     """
     def execute(self, incident_obj, retrieved_context):
         gemma_key = os.environ.get('GEMMA_API_KEY') or os.environ.get('GEMINI_API_KEY')
         
-        # Build strict context string from retrieved chunks
+        animal_type = incident_obj.get("animal_type", "cattle")
+        symptoms = incident_obj.get("symptoms_observed", incident_obj.get("symptoms", "Physical discomfort"))
+        title = incident_obj.get("issue_title", "Livestock distress")
+        description = incident_obj.get("description", "")
+        severity = incident_obj.get("severity", "medium")
+
+        # Build context string from retrieved chunks
         context_str = ""
         if retrieved_context:
             for idx, c in enumerate(retrieved_context, 1):
-                context_str += f"\n--- DOCUMENT CHUNK {idx} (Source: {c['source']}, Title: {c['title']}, Confidence: {c['confidence']}) ---\n{c['content']}\n"
+                context_str += f"\n--- RETRIEVED DOCUMENT {idx} (Source: {c['source']}, Title: {c['title']}, Confidence: {c['confidence']}) ---\n{c['content']}\n"
         else:
-            context_str = "No knowledge base documents retrieved."
+            context_str = "No specific local SOP document found."
 
-        prompt = f"""You are a reasoning engine for the Karnataka BioSecurity Network.
-Analyze the following livestock incident and retrieved veterinary knowledge base context.
+        prompt = f"""You are an expert Global Veterinary Clinical Pharmacologist and Chief Medical Officer for the Karnataka BioSecurity Network.
 
-INCIDENT REPORT:
-- Animal Type: {incident_obj['animal_type']}
-- Issue Title: {incident_obj['issue_title']}
-- Symptoms: {incident_obj['symptoms_observed']}
-- Description: {incident_obj['description']}
-- Severity: {incident_obj['severity']}
+INCIDENT DETAILS REPORTED:
+- Animal Species: {animal_type}
+- Issue Title: {title}
+- Observed Symptoms / Abnormalities: {symptoms}
+- Incident Description: {description}
+- Urgency / Severity: {severity}
 
-RETRIEVED KNOWLEDGE BASE CONTEXT:
+RETRIEVED LOCAL SOP CONTEXT:
 {context_str}
 
-STRICT NON-HALLUCINATION RULES:
-1. Base all recommendations and advisories strictly on the RETRIEVED KNOWLEDGE BASE CONTEXT provided above.
-2. Do NOT invent guidelines, medicines, or procedures not backed by the context.
-3. If the retrieved context lacks evidence for a specific question or protocol, explicitly write "Insufficient evidence."
+CRITICAL INSTRUCTIONS FOR GLOBAL VETERINARY MEDICINES & DIAGNOSIS:
+1. DIAGNOSIS: Determine the exact probable diagnosis matching the symptoms ({symptoms}) in {animal_type}. (e.g. Mange / Ringworm / Dermatitis / Lumpy Skin Disease / FMD / PPR / Swine Fever / Avian Influenza / Mastitis / Pneumonia).
+2. GLOBAL MEDICINES & THERAPEUTICS: Consult global veterinary pharmacopeia, WOAH/OIE, FAO, and international veterinary standards. Provide the BEST, MOST EFFECTIVE medicines, Active Pharmaceutical Ingredients (APIs), exact dosage guidelines, administration routes (IM, IV, Topical, Oral), and global generic/brand therapeutics tailored specifically to {symptoms} in {animal_type}.
+   - If skin lesions/hair loss/crusts: Include antiparasitics (e.g. Ivermectin 0.2 mg/kg), topical antiseptics (Chlorhexidine/Povidone-Iodine), anti-inflammatory NSAIDs (Meloxicam), and Vitamin A/E skin supplements.
+   - If blisters/oral lesions: Include oral washes, mouth soothing gel, NSAIDs, and secondary antibiotic cover.
+   - If respiratory/cough/fever: Include NSAID antipyretics, broad-spectrum antibiotics (Oxytetracycline/Enrofloxacin), and electrolyte hydration.
+   - DO NOT hardcode Foot and Mouth Disease (FMD) mouth wash if the symptoms indicate skin mange, ringworm, or non-FMD conditions!
 
-Please provide structured output with the following sections clearly marked:
-POSSIBLE CONCERN: <describe likely concern grounded in retrieved text or 'Insufficient evidence.'>
-IMMEDIATE PRECAUTIONS: <bullet list of 3-4 precautions directly supported by retrieved text>
-ISOLATION RECOMMENDATION: <specific quarantine radius/isolation steps from text>
-RECOMMENDED MEDICINES & THERAPEUTICS: <bullet list of specific medicines, mouth/foot washes, antiseptics, NSAIDs, antibiotics for secondary infection, or supportive treatments directly mentioned in retrieved context, or 'Insufficient evidence.' if none specified>
-FARMER ADVISORY: <3 simplified clear action points for the farmer>
-VETERINARY ADVISORY: <technical recommendations for the visiting veterinarian>
-GOVERNMENT REPORTING RECOMMENDATION: <reporting timeline/SOP requirements from context>"""
+Please format your response clearly with the following section headers:
+POSSIBLE CONCERN: <exact likely diagnosis based on symptoms and global veterinary medical knowledge>
+IMMEDIATE PRECAUTIONS: <bullet list of 3-4 immediate biosecurity and farm precautions>
+ISOLATION RECOMMENDATION: <specific isolation radius and hygiene protocol>
+RECOMMENDED MEDICINES & THERAPEUTICS: <bullet list of specific global medicines, active ingredients, exact dosage, administration routes, and topical washes tailored to this condition>
+FARMER ADVISORY: <3 clear actionable steps for the farmer>
+VETERINARY ADVISORY: <technical clinical recommendations, diagnostic tests, and treatment protocol for the visiting veterinarian>
+GOVERNMENT REPORTING RECOMMENDATION: <surveillance zone and reporting requirements>"""
 
         reasoning_text = None
 
         if gemma_key and not gemma_key.startswith('nvapi-'):
-            for model_name in ['gemma-4-31b-it', 'gemma-4-26b-a4b-it']:
+            # Valid models on Google AI Gemini/Gemma endpoints
+            candidate_models = [
+                'gemini-2.5-flash',
+                'gemini-2.0-flash',
+                'gemini-1.5-flash',
+                'gemma-2-27b-it',
+                'gemini-1.5-pro'
+            ]
+            for model_name in candidate_models:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemma_key}"
-                    res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=35)
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}]}]
+                    }
+                    res = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
                     if res.status_code == 200:
                         candidates = res.json().get('candidates', [])
                         if candidates:
@@ -67,48 +86,54 @@ GOVERNMENT REPORTING RECOMMENDATION: <reporting timeline/SOP requirements from c
                                         raw_text += p['text']
                             if raw_text.strip():
                                 reasoning_text = raw_text.strip()
+                                print(f"[SUCCESS] ReasoningAgent generated global veterinary medicines using {model_name}.")
                                 break
+                    else:
+                        print(f"ReasoningAgent API Status {res.status_code} ({model_name}): {res.text[:120]}")
                 except Exception as e:
-                    print(f"Reasoning Agent error ({model_name}): {e}")
+                    print(f"ReasoningAgent Error ({model_name}): {e}")
 
-        # Deterministic grounded fallback if LLM offline or insufficient context
+        # Dynamic symptom-matched fallback if LLM endpoint unreachable
         if not reasoning_text:
-            if not retrieved_context:
-                reasoning_text = """POSSIBLE CONCERN: Insufficient evidence. No matching knowledge base document found.
-IMMEDIATE PRECAUTIONS:
-- Isolate affected animal immediately.
-- Provide clean drinking water and soft feed.
-- Limit handler movement between sheds.
-ISOLATION RECOMMENDATION: Insufficient evidence. Immediate isolation recommended pending vet review.
-RECOMMENDED MEDICINES & THERAPEUTICS:
-- Flush mouth/wounds with 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution.
-- Administer supportive antipyretic/NSAID (Meloxicam) as prescribed by licensed veterinarian.
-- Provide Oral Rehydration Salts (ORS) and soft gruel.
-FARMER ADVISORY:
-1. Separate the sick animal from the herd.
-2. Avoid direct contact with other farm livestock.
-3. Contact nearest veterinary officer immediately.
-VETERINARY ADVISORY: Clinical examination required. Sample collection recommended if symptoms worsen.
-GOVERNMENT REPORTING RECOMMENDATION: Insufficient evidence for mandatory quarantine order."""
+            symptoms_lower = symptoms.lower()
+            if any(k in symptoms_lower for k in ['hair loss', 'skin', 'crust', 'lesion', 'red', 'scab', 'itch', 'alopecia']):
+                meds_fallback = """- Antiparasitic / Acaricide: Subcutaneous Ivermectin @ 0.2 mg/kg body weight or topical Permethrin spray.
+- Topical Antiseptic: Wash lesions daily with 1% Chlorhexidine or Povidone-Iodine solution; apply zinc oxide soothing ointment.
+- Anti-inflammatory / Pain Relief: Oral/IM Meloxicam @ 0.5 mg/kg body weight under veterinary supervision.
+- Supportive Skin Care: Vitamin A, D3, E and Zinc oral supplement to promote epithelial healing."""
+                concern_fallback = f"Suspected Parasitic/Fungal Dermatitis (Mange/Ringworm) in {animal_type.title()}"
+            elif any(k in symptoms_lower for k in ['blister', 'drool', 'saliva', 'mouth', 'tongue', 'foot', 'hoof']):
+                meds_fallback = """- Oral Cavity Wash: Flush mouth lesions twice daily with 1% Potassium Permanganate (KMnO4) solution or 0.5% Alum solution.
+- Foot & Interdigital Care: Clean hoof lesions with 1% KMnO4 wash, dry, and apply Loraxene/antiseptic fly-repellent spray.
+- Antipyretic / NSAID: Meloxicam @ 0.5 mg/kg IV/IM for fever and severe lameness pain.
+- Secondary Bacterial Umbrella: Long-acting Oxytetracycline @ 20 mg/kg IM if prescribed by VAS."""
+                concern_fallback = f"Suspected Vesicular Stomatitis / Foot and Mouth Disease in {animal_type.title()}"
+            elif any(k in symptoms_lower for k in ['cough', 'nasal', 'breath', 'pneumonia', 'fever', 'respiratory']):
+                meds_fallback = """- Broad-Spectrum Antibiotic: Enrofloxacin @ 5 mg/kg or Oxytetracycline @ 20 mg/kg IM for respiratory secondary infection.
+- Anti-inflammatory / Antipyretic: Meloxicam or Flunixin Meglumine @ 1.1-2.2 mg/kg for pulmonary inflammation and high fever.
+- Mucolytic & Expectorant: Oral Ammonium Chloride & Potassium Iodide solution.
+- Hydration: Oral Rehydration Salts (ORS) with dextrose and warm clean water."""
+                concern_fallback = f"Suspected Acute Respiratory Disease / Pneumonia in {animal_type.title()}"
             else:
-                top_c = retrieved_context[0]
-                reasoning_text = f"""POSSIBLE CONCERN: Concern grounded in {top_c['title']} ({top_c['source']}).
+                meds_fallback = """- Broad-Spectrum Antimicrobial: Administer parenteral antibiotic under veterinary prescription.
+- Antipyretic & Analgesic: NSAID (Meloxicam 0.5 mg/kg) for pain and temperature regulation.
+- Electrolyte & Fluid Support: Oral Rehydration Salts (ORS) and glucose supplementation.
+- Topical Care: Apply antiseptic dressing on any physical skin abrasions."""
+                concern_fallback = f"Suspected Clinical Distress in {animal_type.title()}"
+
+            reasoning_text = f"""POSSIBLE CONCERN: {concern_fallback}
 IMMEDIATE PRECAUTIONS:
-- Isolate affected livestock immediately to prevent horizontal transmission.
-- Disinfect premises with recommended disinfectant as per {top_c['title']}.
-- Restrict farm visitors and vehicle entry.
-ISOLATION RECOMMENDATION: Isolate animal at least 100 meters away from healthy livestock.
+- Isolate affected {animal_type} immediately to prevent spread.
+- Disinfect premises daily with 1% Sodium Hypochlorite or 2% Phenol.
+- Restrict handler movement and enforce footwear footbaths.
+ISOLATION RECOMMENDATION: Maintain isolation at least 100 meters away from unexposed livestock for 14 days.
 RECOMMENDED MEDICINES & THERAPEUTICS:
-- Oral Wash: Flush mouth lesions twice daily with 1% Potassium Permanganate (KMnO4) or 0.5% Alum solution. Apply Boro-glycerine paste.
-- Foot & Wound Care: Wash interdigital lesions with KMnO4 solution and apply antiseptic fly-repellent ointment (Loraxene / copper sulphate).
-- Fever & Pain Control: NSAIDs (Meloxicam @ 0.5 mg/kg IV/IM) under veterinary supervision.
-- Secondary Infection Prevention: Broad-spectrum antibiotic umbrella (e.g. Oxytetracycline @ 20 mg/kg IM) if prescribed by VAS.
-- Hydration & Nutrition: Administer Oral Rehydration Salts (ORS), dextrose, and soft green fodder/gruel.
+{meds_fallback}
 FARMER ADVISORY:
-1. Separate the animal from the herd immediately.
-2. Avoid herd contact and restrict footwear movement.
-3. Contact nearby veterinarian for official inspection and prescription.
-VETERINARY ADVISORY: Perform clinical examination and initiate supportive antimicrobial & anti-inflammatory therapy based on {top_c['title']}.
+1. Separate the sick animal from the herd immediately.
+2. Provide clean drinking water, soft green fodder, and electrolyte gruel.
+3. Contact nearest veterinary officer for official clinical examination and prescription.
+VETERINARY ADVISORY: Perform clinical examination, collect diagnostic samples, and administer targeted anti-inflammatory & antimicrobial therapy.
 GOVERNMENT REPORTING RECOMMENDATION: Report to District Deputy Director within 6 hours if mortality exceeds threshold."""
 
         return reasoning_text
