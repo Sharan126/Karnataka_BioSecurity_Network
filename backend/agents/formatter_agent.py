@@ -114,7 +114,18 @@ class FormatterAgent:
         return formatted_output
 
     def _extract_section(self, text, header_name):
-        pattern = rf"{header_name}:\s*(.*?)(?=\n[A-Z\s]+:|\Z)"
+        known_headers = [
+            "POSSIBLE CONCERN",
+            "IMMEDIATE PRECAUTIONS",
+            "ISOLATION RECOMMENDATION",
+            "RECOMMENDED MEDICINES & THERAPEUTICS",
+            "RECOMMENDED MEDICINES",
+            "FARMER ADVISORY",
+            "VETERINARY ADVISORY",
+            "GOVERNMENT REPORTING RECOMMENDATION"
+        ]
+        headers_pattern = "|".join([re.escape(h) for h in known_headers])
+        pattern = rf"{header_name}:\s*(.*?)(?=\n(?:{headers_pattern}|[A-Z\s&/]{{3,}}):|\Z)"
         match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(1).strip()
